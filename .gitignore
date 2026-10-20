@@ -4,4 +4,3 @@ app/build/
 app/.cxx/
 local.properties
 *.apk
-build/
