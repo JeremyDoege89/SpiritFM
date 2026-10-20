@@ -14,7 +14,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "3.0.0-mtk1"
+        versionName = "3.0.0"
         ndk { abiFilters += setOf("arm64-v8a") }
         externalNativeBuild { ndkBuild { arguments += listOf("APP_PLATFORM=android-29") } }
     }
@@ -27,10 +27,24 @@ android {
     // s2d is a root daemon shipped as libs2d.so; it must be extracted to disk so su can exec it.
     packaging { jniLibs { useLegacyPackaging = true } }
 
+    // Local, git-ignored keystore.properties: storeFile / storePassword / keyAlias / keyPassword.
+    val keystoreProps = rootProject.file("keystore.properties").takeIf { it.isFile }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }
+    }
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
