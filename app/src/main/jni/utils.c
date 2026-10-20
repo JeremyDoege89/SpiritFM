@@ -26,6 +26,10 @@
   char * g2_audio_done_file = "/sdcard/g2_audio_done";  // Does not work: "/data/data/fm.a2d.sf/files/g2_audio_done", "/dev/g2_audio_done";
 
   #include <android/log.h>
+  #include <signal.h>
+  #include <time.h>
+  #include <sys/time.h>
+  #include <stdint.h>
   #include <dirent.h>                                                   // For opendir (), readdir (), closedir (), DIR, struct dirent.
 
   int gen_server_loop_func (unsigned char * cmd_buf, int cmd_len, unsigned char * res_buf, int res_max);

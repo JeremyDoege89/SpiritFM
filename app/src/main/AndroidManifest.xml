@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Privileged: granted when installed as a priv-app by the bundled KernelSU/Magisk module.
+         Needed to capture MediaRecorder.AudioSource.RADIO_TUNER (1998) like the stock FM app. -->
+    <uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_ROUTING" />
+
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/img_icon"
+        android:label="Spirit FM"
+        android:theme="@android:style/Theme.Holo">
+
+        <activity
+            android:name="fm.a2d.sf.gui_act"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="fm.a2d.sf.set_act"
+            android:exported="false"
+            android:label="Settings" />
+
+        <!-- Separate process, as in the original: avoids fg/bg problems. -->
+        <service
+            android:name="fm.a2d.sf.svc_svc"
+            android:process=":s"
+            android:label="Spirit FM Service"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="fm.a2d.sf.action.set" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="fm.a2d.sf.svc_bcr"
+            android:exported="true">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>

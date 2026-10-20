@@ -170,7 +170,7 @@
 
   //#define V4L2_CAP_HW_FREQ_SEEK           0x00000400  /* Can do hardware frequency seek  */
 
-  #ifndef v4l2_hw_freq_seek
+  #ifndef VIDIOC_S_HW_FREQ_SEEK                                        // Modern NDK videodev2.h already defines it
   struct v4l2_hw_freq_seek {
         __u32                 tuner;
         enum v4l2_tuner_type  type;

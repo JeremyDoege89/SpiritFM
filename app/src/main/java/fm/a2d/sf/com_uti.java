@@ -749,7 +749,7 @@ public final class com_uti  {
       Process p;
       if (su) {
         if (file_get("/sdcard/s2_sacon") && cmds[0].startsWith("/data/local/s2d server_mode")) {
-            p = Runtime.getRuntime().exec ("su", "--context", "u:r:system_app:s0");
+            p = Runtime.getRuntime().exec (new String [] {"su", "--context", "u:r:system_app:s0"});
         }
         else {
             p = Runtime.getRuntime ().exec ("su");

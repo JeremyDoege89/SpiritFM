@@ -1874,53 +1874,45 @@ int f_freq_hi = 399999;
   public void gap_gui_clicked (View view) {                             // See res/layout/gui_pg2_layout.xml & gui_act
     int id = view.getId ();
     com_uti.logd ("id: " + id + "  view: " + view);
-    switch (id) {
 
-      case R.id.cb_test:
-        break;
+    if (id == R.id.cb_test) {
 
-      case R.id.cb_visu:
+    }
+    else if (id == R.id.cb_visu) {
         if (((CheckBox) view).isChecked ())
           visualizer_state_set ("Start");
         else
           visualizer_state_set ("Stop");
-        break;
-
-      case R.id.cb_tuner_stereo:
+    }
+    else if (id == R.id.cb_tuner_stereo) {
         cb_tuner_stereo (((CheckBox) view).isChecked ());
-        break;
-
-      case R.id.cb_audio_stereo:
+    }
+    else if (id == R.id.cb_audio_stereo) {
         cb_audio_stereo (((CheckBox) view).isChecked ());
-        break;
-
-      case R.id.cb_af:
+    }
+    else if (id == R.id.cb_af) {
         cb_af (((CheckBox) view).isChecked ());
-        break;
-
-      case R.id.cb_speaker:
+    }
+    else if (id == R.id.cb_speaker) {
         if (((CheckBox) view).isChecked ())
           m_com_api.key_set ("audio_output", "Speaker");
         else
           m_com_api.key_set ("audio_output", "Headset");
-        break;
-
-      case R.id.rb_band_eu:
+    }
+    else if (id == R.id.rb_band_eu) {
         tuner_band_set ("EU");
         rb_log (view, (RadioButton) view, ((RadioButton) view).isChecked ());
-        break;
-
-      case R.id.rb_band_us:
+    }
+    else if (id == R.id.rb_band_us) {
         tuner_band_set ("US");
         rb_log (view, (RadioButton) view, ((RadioButton) view).isChecked ());
-        break;
-
-      case R.id.rb_band_uu:
+    }
+    else if (id == R.id.rb_band_uu) {
         tuner_band_set ("UU");
         rb_log (view, (RadioButton) view, ((RadioButton) view).isChecked ());
-        break;
     }
   }
+
 
 
     // Preferences:
