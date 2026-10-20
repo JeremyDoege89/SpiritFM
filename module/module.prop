@@ -1,0 +1,6 @@
+id=spiritfm
+name=Spirit FM (privileged)
+version=3.0.0-mtk1
+versionCode=1
+author=JeremyDoege89 (port of Spirit2 by Michael A. Reid)
+description=Installs Spirit FM as a privileged system app so it can play the FM tuner's audio (CAPTURE_AUDIO_OUTPUT). Needs root for the tuner daemon too.

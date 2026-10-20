@@ -32,7 +32,7 @@
   struct fm_softmute_tune_t {
     int32_t  rssi;
     uint16_t freq;
-    uint8_t  valid;
+    int32_t  valid;                                                     // fm_bool is an enum, so 4 bytes
   };
 
   #define FM_IOCTL_POWERUP            _IOWR (FM_IOC_MAGIC,  0, struct fm_tune_parm *)
@@ -468,7 +468,8 @@
     if (stereo == GET)
       return (curr_stereo);
     errno = 0;
-    if (ioctl (dev_hndl, FM_IOCTL_SETMONOSTERO, stereo ? 0 : 1) < 0)   // Driver: 0 = auto stereo, 1 = forced mono
+    int32_t mono = stereo ? 0 : 1;                                      // Driver: 0 = auto stereo, 1 = forced mono
+    if (ioctl (dev_hndl, FM_IOCTL_SETMONOSTERO, & mono) < 0)
       loge ("FM_IOCTL_SETMONOSTERO errno: %d (%s)", errno, strerror (errno));
     curr_stereo = stereo;
     return (curr_stereo);

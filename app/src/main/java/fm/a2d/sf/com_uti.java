@@ -62,6 +62,7 @@ public final class com_uti  {
     lib_dir   = ai.nativeLibraryDir + "/";
     files_dir = context.getFilesDir ().getAbsolutePath () + "/";
     data_dir  = ai.dataDir + "/";
+    svc_tnr.s2d_running_file = files_dir + "s2d_running";
     logd ("lib_dir: " + lib_dir + "  files_dir: " + files_dir);
   }
   private static final int      DEF_BUF         = 512;
@@ -742,6 +743,8 @@ public final class com_uti  {
     else if (com_uti.file_get ("/system/xbin/su"))
       ret = true;
     else if (com_uti.file_get ("/su/bin/su"))
+      ret = true;
+    else if (com_uti.file_get ("/debug_ramdisk/su") || com_uti.file_get ("/sbin/su"))   // Magisk
       ret = true;
     com_uti.logd ("ret: " + ret);
     return (ret);

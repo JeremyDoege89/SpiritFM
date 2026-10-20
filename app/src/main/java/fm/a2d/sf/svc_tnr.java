@@ -163,7 +163,7 @@ public class svc_tnr implements svc_tap {
   }
 
 
-  public static final String s2d_running_file = "/dev/s2d_running";
+  public static String s2d_running_file = "/dev/s2d_running";          // Moved to the app's files dir by paths_init (); apps can't see /dev files
 
   private boolean s2d_running_wait (boolean running, int tmo_ms) {
     com_uti.logd ("poll for s2d_running");
@@ -210,7 +210,7 @@ public class svc_tnr implements svc_tap {
         m_com_api.tuner_state = "Starting";                             // Starting...
 
         if (com_uti.file_get (s2d_running_file)) {                      // If "s2d daemon running" file already exists (if still running or was unexpectedly killed)
-          ret = com_uti.sys_run("chmod 777 /dev/s2d_running", true);
+          ret = com_uti.sys_run("chmod 777 " + s2d_running_file, true);
           com_uti.logd("chmod 777 s2d_running_file ret: " + ret);
           com_uti.file_delete (s2d_running_file);
           com_uti.loge ("HAVE s2d_running_file: " + s2d_running_file);
@@ -291,7 +291,7 @@ public class svc_tnr implements svc_tap {
         m_com_api.service_update_send (null, "Starting Daemon", "" + service_timeout_daemon_start);
 
                                                                         // Start libs2d.so daemon
-        cmd_line = daemon_bin + " server_mode_via_argv1 1>/dev/null 2>/dev/null";
+        cmd_line = daemon_bin + " server_mode_via_argv1 " + s2d_running_file + " 1>/dev/null 2>/dev/null";
         ret = com_uti.sys_run (cmd_line, true);                         // Start s2d daemon
         com_uti.logd ("daemon kill/start ret: " + ret);
 

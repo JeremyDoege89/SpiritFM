@@ -116,7 +116,7 @@ public class com_api {
     intent.setClass (context, svc_svc.class);                           // !! Note possible different context and m_context !!
     intent.putExtra (key, val);
     request_code ++;                                                    // Need a unique value to identify
-    PendingIntent pi = PendingIntent.getService (context, request_code, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    PendingIntent pi = PendingIntent.getService (context, request_code, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     return (pi);
   }
 ///*
@@ -145,7 +145,7 @@ public class com_api {
       }*/
 
       //intent.setClass (m_context, svc_svc.class);
-      intent.setComponent (new android.content.ComponentName ("fm.a2d.sf", "fm.a2d.sf.svc_svc"));
+      intent.setComponent (new android.content.ComponentName (m_context.getPackageName (), "fm.a2d.sf.svc_svc"));
       intent.putExtra (key, val);
       if (m_context != null)
         m_context.startService (intent);
@@ -172,6 +172,7 @@ public class com_api {
     intent.putExtra ("chass_phtmo",  chass_phtmo);
 
     try {
+      intent.setPackage (m_context.getPackageName ());
       m_context.sendStickyBroadcast (intent);                           // Send Sticky Broadcast w/ all info
     }
     catch (Throwable e) {

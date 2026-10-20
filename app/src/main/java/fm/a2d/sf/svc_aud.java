@@ -563,7 +563,7 @@ public class svc_aud implements svc_aap, AudioManager.OnAudioFocusChangeListener
 
       iFilter.addCategory (Intent.CATEGORY_DEFAULT);
 
-      Intent last_broadcast_hdst_plug = m_context.registerReceiver (m_hdst_lstnr, iFilter);
+      Intent last_broadcast_hdst_plug = m_context.registerReceiver (m_hdst_lstnr, iFilter, Context.RECEIVER_NOT_EXPORTED);
 
       com_uti.logd ("headset_plgd_lstnr_start onReceive intent last_broadcast_hdst_plug: " + last_broadcast_hdst_plug);
 
@@ -1493,8 +1493,10 @@ REMOTE
 
     m_srcs = m_mic_srcs;
 
-    if (m_com_api.chass_plug_aud.equals ("MTK"))                        // MediaTek: FM is a capture device; needs CAPTURE_AUDIO_OUTPUT (priv-app)
-      m_srcs = new int [] {16, 1998};
+    if (m_com_api.chass_plug_aud.equals ("MTK")) {                      // MediaTek: FM is a capture device; needs CAPTURE_AUDIO_OUTPUT (priv-app)
+      m_srcs = new int [] {1998};                                       // Never fall back to the microphone
+      default_src = 1998;
+    }
 
                                                                         // Doesn't work with Xperia Z w/ AOSP, which ends up selecting 5/Camcorder because 9 & 10 don't work.
     if (com_uti.sony_get () || com_uti.stock_mot_get () || com_uti.gs4_mini_get ()) {

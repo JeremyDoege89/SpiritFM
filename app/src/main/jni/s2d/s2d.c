@@ -12,6 +12,7 @@
   const char * copyright = "Copyright (c) 2011-2015 Michael A. Reid. All rights reserved.";
 
   #include <dlfcn.h>
+  #include <sys/xattr.h>
   #include <stdio.h>
   #include <errno.h>
   #include <sys/stat.h>
@@ -868,7 +869,25 @@
     // Main client and server code:
 
   char * binary_description = /*"Mike's really cool*/ "Spirit2 FM Receiver/Transmitter daemon version: ";
-  char * s2d_running_file = "/dev/s2d_running";
+  char * s2d_running_file = "/dev/s2d_running";                         // Overridden by argv [2]: the app's files dir, since apps can't see /dev files any more
+
+    // Make a file root created in the app's data dir look like the app's own: same owner and SELinux label as its directory.
+  void app_owned_set (char * path) {
+    char dir [DEF_BUF] = "";
+    strlcpy (dir, path, sizeof (dir));
+    char * slash = strrchr (dir, '/');
+    if (slash == NULL)
+      return;
+    * slash = 0;
+    struct stat st;
+    if (stat (dir, & st) == 0 && chown (path, st.st_uid, st.st_gid) != 0)
+      loge ("app_owned_set chown errno: %d", errno);
+    chmod (path, 0644);
+    char con [256] = "";
+    int len = getxattr (dir, "security.selinux", con, sizeof (con) - 1);
+    if (len > 0 && setxattr (path, "security.selinux", con, len, 0) != 0)
+      loge ("app_owned_set setxattr errno: %d", errno);
+  }
 
   int client_run () {
     logd ("client_run");
@@ -917,6 +936,7 @@
     gen_server_exiting = 0;
     while (! gen_server_exiting) {                                      // Do server work until gen_server_exiting
       file_write (s2d_running_file, "", 0, O_CREAT | O_RDWR);                   // Signal running
+      app_owned_set (s2d_running_file);
 
       gen_server_loop (s2d_port, S2D_POLL_MS);                          // Continue servicing requests on s2d_port with 100 ms polling
 
@@ -1306,7 +1326,11 @@ ms_sleep (2000);
       return (0);
     }
 #endif
-    if (argc > 2)                                                       // If test   mode... (If 2 or more parameters)
+    if (argc > 2 && ! strcmp (argv [1], "server_mode_via_argv1")) {     // Server mode with the running flag file path from the app
+      server_mode = 1;
+      s2d_running_file = argv [2];
+    }
+    else if (argc > 2)                                                  // If test   mode... (If 2 or more parameters)
       test_mode = 1;
     else if (argc > 1)                                                  // If server mode... (If 1 or more parameters)
       server_mode = 1;

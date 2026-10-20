@@ -184,7 +184,22 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
     //if (service_update_remote || service_update_notification) // Stops media buttons ?
 
       com_uti.logd ("Calling startForeground");
-      startForeground (com_uti.s2_notif_id, new Notification.Builder (m_context).build ());
+      NotificationManager nm = (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+      nm.createNotificationChannel (new android.app.NotificationChannel ("spirit", "Spirit FM", NotificationManager.IMPORTANCE_LOW));
+      Intent gui = new Intent (this, gui_act.class);
+      Notification notif = new Notification.Builder (m_context, "spirit")
+        .setSmallIcon (R.drawable.img_icon_32)
+        .setContentTitle ("Spirit FM")
+        .setContentText ("FM radio is on")
+        .setOngoing (true)
+        .setContentIntent (android.app.PendingIntent.getActivity (this, 0, gui, android.app.PendingIntent.FLAG_IMMUTABLE))
+        .build ();
+      try {
+        startForeground (com_uti.s2_notif_id, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+      }
+      catch (Throwable e) {
+        com_uti.loge ("startForeground Throwable e: " + e);
+      }
   }
 
   private void foreground_stop () {

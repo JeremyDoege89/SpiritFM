@@ -85,6 +85,7 @@ public class gui_act extends Activity {                                 // publi
 
     super.onCreate (savedInstanceState);
     com_uti.paths_init (this);
+    requestPermissions (new String [] {android.Manifest.permission.RECORD_AUDIO, android.Manifest.permission.POST_NOTIFICATIONS}, 1);
 
     if (m_com_api == null) {                                            // If a receiver has not initialized yet...
       m_com_api = new com_api (m_context);                              // Instantiate Common API
@@ -235,7 +236,7 @@ public class gui_act extends Activity {                                 // publi
 
       Intent last_sticky_state_intent = null;
       if (m_context != null)
-        last_sticky_state_intent = m_context.registerReceiver (m_gap_bcr, intent_filter, null, null);    // No permission, no handler scheduler thread.
+        last_sticky_state_intent = m_context.registerReceiver (m_gap_bcr, intent_filter, null, null, Context.RECEIVER_NOT_EXPORTED);    // No permission, no handler scheduler thread.
       if (last_sticky_state_intent != null) {
         com_uti.logd ("bcast intent last_sticky_state_intent: " + last_sticky_state_intent);
         //m_gap_bcr.onReceive (m_context, last_sticky_state_intent);// Like a resend of last audio status update
