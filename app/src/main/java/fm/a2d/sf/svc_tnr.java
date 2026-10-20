@@ -222,11 +222,11 @@ public class svc_tnr implements svc_tap {
         }
 
                                                                         // Code for Xperia L issue; files under lib like lib/libs2d.so are permission 644 which works OK for libs but not exe/binaries
-        String daemon_lib = "/data/data/fm.a2d.sf/lib/libs2d.so";
-        String daemon_exe = "/data/data/fm.a2d.sf/files/s2d";
+        String daemon_lib = com_uti.lib_dir + "libs2d.so";
+        String daemon_exe = com_uti.files_dir + "s2d";
 
         cmd_line  = "chmod 755 " + daemon_lib + " ;";                   // Set permission 755 for libs2d.so
-        cmd_line += "chmod 755 /data/data/fm.a2d.sf/lib/* ;";           // Set permission 755 for all libs
+        cmd_line += "chmod 755 " + com_uti.lib_dir + "* ;";           // Set permission 755 for all libs
         cmd_line += "cp " + daemon_lib + " " + daemon_exe + " ;";       // Copy lib/lib2sd.so to files/s2d
         cmd_line += "chmod 755 " + daemon_exe + " ;";                   // Set permission 755 for files/s2d
         ret = com_uti.sys_run (cmd_line, false);
@@ -236,8 +236,8 @@ public class svc_tnr implements svc_tap {
                                                                         // Send Phase Update
         m_com_api.service_update_send (null, "Testing Daemon", "" + service_timeout_general);
 
-        String test1 = "/data/data/fm.a2d.sf/files/test1";
-        String test2 = "/data/data/fm.a2d.sf/files/test2";
+        String test1 = com_uti.files_dir + "test1";
+        String test2 = com_uti.files_dir + "test2";
 
         if (com_uti.file_get (test1))
           com_uti.file_delete (test1);

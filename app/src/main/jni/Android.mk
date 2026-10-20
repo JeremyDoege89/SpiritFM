@@ -1,23 +1,9 @@
 LOCAL_PATH:= $(call my-dir)
 
-    # s2d daemon:
-include $(CLEAR_VARS)
-LOCAL_MODULE    := s2d
-#LOCAL_MODULE_FILENAME  := libs2d
-LOCAL_SRC_FILES := s2d/s2d.c
-LOCAL_LDLIBS := -llog
-#LOCAL_LDLIBS := -llog --output /home/m/dev/s2/obj/local/armeabi/mys2d.so
-include $(BUILD_EXECUTABLE)
-#include $(BUILD_SHARED_LIBRARY)
-#include $(BUILD_STATIC_LIBRARY)
+    # s2d daemon: an executable, built by the buildS2d task in app/build.gradle.kts and packaged as libs2d.so
+    # (ndk-build won't give an executable a .so name, and AGP only packages lib*.so).
 
-#mv ../libs/armeabi/libs2d ../libs/armeabi/libs2d.so
-
-#$(NDK_APP_LIBS_OUT)/%/libs2d.so: $(NDK_APP_LIBS_OUT)/%/s2d
-#all: $(foreach _abi,$(APP_ABI),$(NDK_APP_LIBS_OUT)/$(_abi)/libs2d.so)
-#all: $(call host-mv, $<, $@)
-
-    # 5 Tuner Plugins:
+    # 6 Tuner Plugins:
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= tnr/tnr_ssl.c
@@ -35,6 +21,12 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= tnr/tnr_bch.c
 LOCAL_MODULE:= libs2t_bch
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES:= tnr/tnr_mtk.c
+LOCAL_MODULE:= libs2t_mtk
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
 

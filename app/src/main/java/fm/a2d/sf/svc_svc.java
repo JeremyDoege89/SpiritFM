@@ -76,6 +76,7 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
   @Override
   public void onCreate () {                                             // When service newly created...
     com_uti.logd ("stat_creates: " + stat_creates ++);
+    com_uti.paths_init (this);
 
     try {
 
@@ -831,7 +832,7 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
     public void run () {
       int ret = 0;
 
-      ret = files_init ();                                              // /data/data/fm.a2d.sf/files/: busybox, ssd, s.wav, b1.bin, b2.bin
+      ret = files_init ();                                              // files_dir: busybox, ssd, s.wav, b1.bin, b2.bin
       if (ret != 0)
         com_uti.loge ("files_init IGNORE Errors: " + ret);
 
@@ -1030,7 +1031,7 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
         ret ++;
       }
 // !!!!!! OM7 GPE does not have addon.d so shim is not updated
-      if (ret == 0 && com_uti.file_get ("/system/addon.d/99-spirit.sh") && com_uti.file_size_get ("/system/addon.d/99-spirit.sh") != com_uti.file_size_get ("/data/data/fm.a2d.sf/files/99-spirit.sh")) {
+      if (ret == 0 && com_uti.file_get ("/system/addon.d/99-spirit.sh") && com_uti.file_size_get ("/system/addon.d/99-spirit.sh") != com_uti.file_size_get (com_uti.files_dir + "99-spirit.sh")) {
 
         com_uti.logw ("Installing new shim files: Turn BT off");
 
@@ -1039,14 +1040,14 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
 
         String cmd = "";
         cmd += ("mount -o remount,rw /system ; ");
-        cmd += ("cp /data/data/fm.a2d.sf/files/99-spirit.sh /system/addon.d/99-spirit.sh ; ");
+        cmd += ("cp " + com_uti.files_dir + "99-spirit.sh /system/addon.d/99-spirit.sh ; ");
         cmd += ("chmod 755 /system/addon.d/99-spirit.sh ; ");
         if (com_uti.file_get ("/system/lib/libbt-hci.so") && com_uti.file_get ("/system/lib/libbt-hcio.so")) {                // Favor old style
-          cmd += ("cp /data/data/fm.a2d.sf/lib/libbt-hci.so /system/lib/libbt-hci.so ; ");
+          cmd += ("cp " + com_uti.lib_dir + "libbt-hci.so /system/lib/libbt-hci.so ; ");
           cmd += ("chmod 644 /system/lib/libbt-hci.so ; ");
         }
         else if (com_uti.file_get ("/system/vendor/lib/libbt-vendor.so") && com_uti.file_get ("/system/vendor/lib/libbt-vendoro.so")) {
-          cmd += ("cp /data/data/fm.a2d.sf/lib/libbt-vendor.so /system/vendor/lib/libbt-vendor.so ; ");
+          cmd += ("cp " + com_uti.lib_dir + "libbt-vendor.so /system/vendor/lib/libbt-vendor.so ; ");
           cmd += ("chmod 644 /system/vendor/lib/libbt-vendor.so ; ");
         }
         cmd += ("mount -o remount,ro /system ; ");
@@ -1056,7 +1057,7 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
       else if (ret == 0 && (com_uti.file_get (com_uti.platform_orig) || com_uti.platform_file_entirely_ours ())) { // Use platform_file_entirely_ours () in case ROM adds later
         String cmd = "";
         cmd += ("mount -o remount,rw /system ; ");
-        cmd += ("cp /data/data/fm.a2d.sf/files/99-spirit.sh /system/addon.d/99-spirit.sh ; ");
+        cmd += ("cp " + com_uti.files_dir + "99-spirit.sh /system/addon.d/99-spirit.sh ; ");
         cmd += ("chmod 755 /system/addon.d/99-spirit.sh ; ");
         cmd += ("mount -o remount,ro /system ; ");
         com_uti.sys_run (cmd, true);

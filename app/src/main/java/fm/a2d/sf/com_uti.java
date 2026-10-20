@@ -51,6 +51,19 @@ public final class com_uti  {
   public  static final String   api_result_id   = "fm.a2d.sf.result.get";
   public  static final String   api_action_id   = "fm.a2d.sf.action.set";
   public  static final int      android_version = android.os.Build.VERSION.SDK_INT;
+
+    // App paths, set by paths_init() from the real install location (each ends with '/'):
+  public  static String lib_dir   = "/data/data/fm.a2d.sf/lib/";
+  public  static String files_dir = "/data/data/fm.a2d.sf/files/";
+  public  static String data_dir  = "/data/data/fm.a2d.sf/";
+
+  public static void paths_init (Context context) {
+    android.content.pm.ApplicationInfo ai = context.getApplicationInfo ();
+    lib_dir   = ai.nativeLibraryDir + "/";
+    files_dir = context.getFilesDir ().getAbsolutePath () + "/";
+    data_dir  = ai.dataDir + "/";
+    logd ("lib_dir: " + lib_dir + "  files_dir: " + files_dir);
+  }
   private static final int      DEF_BUF         = 512;
 
     // s2d daemon communications:
@@ -658,7 +671,7 @@ public final class com_uti  {
     com_uti.logd ("Done commands");
   }
 
-  private static String platform_copy = "/data/data/fm.a2d.sf/files/audio_platform_info.xml";
+  private static String platform_copy = com_uti.files_dir + "audio_platform_info.xml";
   private static String platform_file = "/system/etc/audio_platform_info.xml";
   public  static String platform_orig = "/system/etc/audio_platform_info.xml.orig";
   private static java.io.BufferedWriter bw = null;
@@ -712,7 +725,7 @@ public final class com_uti  {
     cmd += ("cp " + platform_copy + " " + platform_file + " ; ");
     cmd += ("chmod 644 " + platform_file + " ; ");
 
-    cmd += ("cp /data/data/fm.a2d.sf/files/99-spirit.sh /system/addon.d/99-spirit.sh ; ");
+    cmd += ("cp " + com_uti.files_dir + "99-spirit.sh /system/addon.d/99-spirit.sh ; ");
     cmd += ("chmod 755 /system/addon.d/99-spirit.sh ; ");
 
     cmd += ("mount -o remount,ro /system ; ");
@@ -1021,6 +1034,13 @@ Evo 4G LTE  jewel
   private static String chass_plug_aud = "UNK";
   private static String chass_plug_tnr = "UNK";
 
+  public static boolean mtk_get () {                                    // Apps can't stat /dev/fm under SELinux, so go by SoC vendor too
+    String soc = "";
+    if (android_version >= 31)
+      soc = android.os.Build.SOC_MANUFACTURER;
+    return (file_get ("/dev/fm") || soc.toUpperCase ().startsWith ("MEDIATEK") || android.os.Build.HARDWARE.toLowerCase ().startsWith ("mt"));
+  }
+
   public static String chass_plug_aud_get (Context context) {
 
     com_uti.chass_plug_aud = "UNK";
@@ -1107,6 +1127,9 @@ Evo 4G LTE  jewel
       com_uti.chass_plug_aud = "UNK";
 
 
+    if (com_uti.chass_plug_aud.equals ("UNK") && mtk_get ())             // MediaTek connsys FM (/dev/fm), eg Motorola moto g 2025/2026
+      com_uti.chass_plug_aud = "MTK";
+
     if (com_uti.chass_plug_aud.equals ("UNK")) {
       if (com_uti.file_get ("/dev/radio0") && com_uti.file_get ("/sys/devices/platform/APPS_FM.6")) {   // Qualcomm is always V4L and has this FM /sys directory
         com_uti.chass_plug_aud = "QCV";
@@ -1161,6 +1184,8 @@ Evo 4G LTE  jewel
       com_uti.chass_plug_tnr = "SSL";
     else if (com_uti.chass_plug_aud.equals ("QCV"))
       com_uti.chass_plug_tnr = "QCV";
+    else if (com_uti.chass_plug_aud.equals ("MTK"))
+      com_uti.chass_plug_tnr = "MTK";
     else if (com_uti.chass_plug_aud.equals ("OM7"))
       com_uti.chass_plug_tnr = "BCH";
     else if (com_uti.chass_plug_aud.equals ("LG2"))
@@ -2981,15 +3006,15 @@ It should be noted that operation in this region is the same as it is for all RD
     cmd += ("mount -o remount,rw /system ; ");
     if (com_uti.file_get ("/system/lib/libbt-hci.so")) {                // Favor old style
       cmd += ("mv /system/lib/libbt-hci.so  /system/lib/libbt-hcio.so ; ");
-      cmd += ("cp /data/data/fm.a2d.sf/lib/libbt-hci.so /system/lib/libbt-hci.so ; ");
+      cmd += ("cp " + com_uti.lib_dir + "libbt-hci.so /system/lib/libbt-hci.so ; ");
       cmd += ("chmod 644 /system/lib/libbt-hci.so ; ");
     }
     else if (com_uti.file_get ("/system/vendor/lib/libbt-vendor.so")) {
       cmd += ("mv /system/vendor/lib/libbt-vendor.so  /system/vendor/lib/libbt-vendoro.so ; ");
-      cmd += ("cp /data/data/fm.a2d.sf/lib/libbt-vendor.so /system/vendor/lib/libbt-vendor.so ; ");
+      cmd += ("cp " + com_uti.lib_dir + "libbt-vendor.so /system/vendor/lib/libbt-vendor.so ; ");
       cmd += ("chmod 644 /system/vendor/lib/libbt-vendor.so ; ");
     }
-    cmd += ("cp /data/data/fm.a2d.sf/files/99-spirit.sh /system/addon.d/99-spirit.sh ; ");
+    cmd += ("cp " + com_uti.files_dir + "99-spirit.sh /system/addon.d/99-spirit.sh ; ");
     cmd += ("chmod 755 /system/addon.d/99-spirit.sh ; ");
     cmd += ("mount -o remount,ro /system ; ");
     com_uti.sys_run (cmd, true);

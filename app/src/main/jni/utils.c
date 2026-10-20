@@ -27,6 +27,11 @@
 
   #include <android/log.h>
   #include <signal.h>
+  #include <string.h>
+  #include <stdlib.h>
+  #include <unistd.h>
+  #include <ctype.h>
+  #include <sys/system_properties.h>
   #include <time.h>
   #include <sys/time.h>
   #include <stdint.h>

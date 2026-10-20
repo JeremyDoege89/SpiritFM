@@ -84,6 +84,7 @@ public class gui_act extends Activity {                                 // publi
     }
 
     super.onCreate (savedInstanceState);
+    com_uti.paths_init (this);
 
     if (m_com_api == null) {                                            // If a receiver has not initialized yet...
       m_com_api = new com_api (m_context);                              // Instantiate Common API

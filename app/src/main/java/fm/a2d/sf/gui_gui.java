@@ -2019,7 +2019,7 @@ int f_freq_hi = 399999;
   String new_logs_cmd_get () {
     String cmd  = "rm " + logfile;
 
-    cmd += cmd_build ("cat /data/data/fm.a2d.sf/shared_prefs/s2_prefs.xml");
+    cmd += cmd_build ("cat " + com_uti.data_dir + "shared_prefs/s2_prefs.xml");
     cmd += cmd_build ("id");
     cmd += cmd_build ("uname -a");
     cmd += cmd_build ("getprop");
@@ -2036,7 +2036,7 @@ int f_freq_hi = 399999;
 
     cmd += cmd_build ("logcat -d -v time");
 
-    cmd += cmd_build ("ls -lR /data/data/fm.a2d.sf/ /data/data/fm.a2d.sf/lib/ /init* /sbin/ /firmware/ /data/anr/ /data/tombstones/ /dev/ /system/ /sys/");
+    cmd += cmd_build ("ls -lR " + com_uti.data_dir + " " + com_uti.lib_dir + " /init* /sbin/ /firmware/ /data/anr/ /data/tombstones/ /dev/ /system/ /sys/");
 
     return (cmd);
   }

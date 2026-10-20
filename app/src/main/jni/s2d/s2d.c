@@ -36,6 +36,19 @@
   #include <netinet/in.h>
   #include <netdb.h> 
 
+    // Directory holding this executable, with trailing '/'. Modern Android installs native libs under /data/app/~~<rand>/<pkg>/lib/arm64/.
+  void lib_dir_get (char * buf, int len) {
+    int n = readlink ("/proc/self/exe", buf, len - 1);
+    if (n <= 0) {
+      strlcpy (buf, "/data/data/fm.a2d.sf/lib/", len);
+      return;
+    }
+    buf [n] = 0;
+    char * slash = strrchr (buf, '/');
+    if (slash)
+      slash [1] = 0;
+  }
+
   int s2d_port = NET_PORT_S2D;
 
 
@@ -162,10 +175,12 @@
       return (curr_chass_plug_tnr);
 
     char lib_name [DEF_BUF] = "";                                       // Get Tuner Plugin library name
-    strlcpy   (lib_name, "/data/data/fm.a2d.sf/lib/libs2t_", sizeof (lib_name));
-    strlcat   (lib_name, tnr,                                sizeof (lib_name));
-    strlcat   (lib_name, ".so",                              sizeof (lib_name));
-    lower_set (lib_name);
+    char plug_name [DEF_BUF] = "libs2t_";                               // Only the plugin file name is lower-cased; the install dir is mixed case
+    strlcat   (plug_name, tnr,                               sizeof (plug_name));
+    strlcat   (plug_name, ".so",                             sizeof (plug_name));
+    lower_set (plug_name);
+    lib_dir_get (lib_name, sizeof (lib_name));                          // Plugins sit beside this daemon (libs2d.so) in the app's native lib dir
+    strlcat   (lib_name, plug_name,                          sizeof (lib_name));
 
     tnr_fd = dlopen (lib_name, RTLD_LAZY);                              // Load library
     if (tnr_fd == NULL) {

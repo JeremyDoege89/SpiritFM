@@ -204,6 +204,8 @@ public class svc_aud implements svc_aap, AudioManager.OnAudioFocusChangeListener
 
     if (m_com_api.chass_plug_aud.equals ("CUS"))
       m_samplerate = 48000;
+    else if (m_com_api.chass_plug_aud.equals ("MTK"))                   // Same as Motorola's stock FM service
+      m_samplerate = 44100;
     else if (m_com_api.chass_plug_aud.equals ("QCV"))
       m_samplerate = 48000;
     else if (m_com_api.chass_plug_aud.equals ("OM7"))
@@ -1491,6 +1493,9 @@ REMOTE
 
     m_srcs = m_mic_srcs;
 
+    if (m_com_api.chass_plug_aud.equals ("MTK"))                        // MediaTek: FM is a capture device; needs CAPTURE_AUDIO_OUTPUT (priv-app)
+      m_srcs = new int [] {16, 1998};
+
                                                                         // Doesn't work with Xperia Z w/ AOSP, which ends up selecting 5/Camcorder because 9 & 10 don't work.
     if (com_uti.sony_get () || com_uti.stock_mot_get () || com_uti.gs4_mini_get ()) {
       if (support_direct_sources)
@@ -1520,7 +1525,7 @@ REMOTE
         }
       }
 
-      if (src < -1 || (src > 15 && src != 1999) ) {
+      if (src < -1 || (src > 15 && src != 1999 && src != 1998) ) {        // 1998 = MediaRecorder.AudioSource.RADIO_TUNER
         src = default_src;
         com_uti.logd ("From default_src final src to try: " + src);
       }
