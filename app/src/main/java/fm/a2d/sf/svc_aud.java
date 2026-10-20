@@ -1061,8 +1061,54 @@ public class svc_aud implements svc_aap, AudioManager.OnAudioFocusChangeListener
   private int fm_device = 0x100000;
 
                                                                         // Start audio at hardware level based on mode.
+    // MediaTek: tuner audio is copied by the root helper (rootaudio), since only root or priv-apps may capture RADIO_TUNER.
+
+  private boolean is_mtk () {
+    return (m_com_api.chass_plug_aud.equals ("MTK"));
+  }
+
+  private void mtk_speaker_set (boolean speaker) {
+    java.io.File f = new java.io.File (com_uti.files_dir + "rootaudio_speaker");
+    try {
+      if (speaker)
+        f.createNewFile ();
+      else
+        f.delete ();
+    }
+    catch (Throwable e) {
+      com_uti.loge ("mtk_speaker_set Throwable e: " + e);
+    }
+  }
+
+  private void mtk_audio_start () {
+    if (com_uti.prefs_get (m_context, "audio_output", "").equals ("")) // Default to the loudspeaker; the wired headset is usually just the antenna
+      m_com_api.audio_output = "Speaker";
+    mtk_speaker_set (! m_com_api.audio_output.equals ("Headset"));
+    String run_file = com_uti.files_dir + "rootaudio_run";
+    try {
+      new java.io.File (run_file).createNewFile ();
+    }
+    catch (Throwable e) {
+      com_uti.loge ("mtk_audio_start Throwable e: " + e);
+    }
+    String cmd = "pkill -f fm.a2d.sf.rootaudio ; CLASSPATH=" + m_context.getApplicationInfo ().sourceDir + " nohup app_process /system/bin fm.a2d.sf.rootaudio "
+                  + run_file + " " + com_uti.files_dir + "rootaudio_speaker >/dev/null 2>&1 &";
+    int ret = com_uti.sys_run (cmd, true);
+    com_uti.logd ("mtk_audio_start ret: " + ret + "  audio_output: " + m_com_api.audio_output);
+  }
+
+  private void mtk_audio_stop () {
+    new java.io.File (com_uti.files_dir + "rootaudio_run").delete ();     // Helper exits within ~250 ms and restores routing
+    com_uti.logd ("mtk_audio_stop");
+  }
+
   private void mode_audio_start () {                                    //     Called only by audio_start() (for audio start) & audio_output_set() (for audio restart)
     com_uti.logd ("m_audiotrack: " + m_audiotrack + "  m_com_api.audio_state: " + m_com_api.audio_state);
+
+    if (is_mtk ()) {
+      mtk_audio_start ();
+      return;
+    }
 
     if (com_uti.file_get ("/sdcard/spirit/pcm_stats")) {
       write_stats_seconds = 6;
@@ -1201,6 +1247,11 @@ public class svc_aud implements svc_aap, AudioManager.OnAudioFocusChangeListener
 
   private void mode_audio_pause () {                                    // Pause audio at hardware level based on mode.   Called only by audio_pause() and mode_audio_stop()
     com_uti.logd ("m_audiotrack: " + m_audiotrack + "  m_audiorecord: " + "  m_com_api.audio_state: " + m_com_api.audio_state);
+
+    if (is_mtk ()) {
+      mtk_audio_stop ();
+      return;
+    }
 
         // STOP pcm_read:
     com_uti.logd ("thread_pcm_read: " + thread_pcm_read + "  thread_pcm_read_active: " + thread_pcm_read_active);
@@ -1343,6 +1394,11 @@ public class svc_aud implements svc_aap, AudioManager.OnAudioFocusChangeListener
 
     if (com_uti.s2_tx_apk ())                                           // Do nothing if transmit APK...
       return (m_com_api.audio_output = new_audio_output);
+
+    if (is_mtk ()) {                                                    // rootaudio picks this up live
+      mtk_speaker_set (new_audio_output.equals ("Speaker"));
+      return (m_com_api.audio_output = new_audio_output);
+    }
 
     boolean lg2_restart = restart_param;                                // If param restart, then LG2 restart...
     if (! m_com_api.chass_plug_aud.equals ("LG2") || new_audio_output.equals ("Headset"))
