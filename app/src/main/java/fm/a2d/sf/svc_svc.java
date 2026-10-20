@@ -860,6 +860,7 @@ public class svc_svc extends Service implements svc_tcb, svc_acb {  // Service c
         }
       }
       com_uti.logd ("Starting Tuner...");
+      foreground_start ();                                              // Before any daemon traffic: background apps get loopback UDP blocked (sendto EPERM)
 
       m_svc_tap.tuner_set ("tuner_state", "Start");                     // This starts the daemon
 

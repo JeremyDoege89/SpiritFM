@@ -55,70 +55,14 @@
   #define FM_SPACE_100K       1
   #define FM_SPACE_200K       2
 
-    // RDS data as the driver returns it from read (). Layout must match the kernel's 64-bit struct exactly.
-  typedef struct {
-    uint8_t  TP, TA, Music, Stereo, Artificial_Head, Compressed, Dynamic_PTY, Text_AB;
-    uint32_t flag_status;
-  } mtk_rds_flag_t;
-
-  typedef struct {
-    uint16_t Month, Day, Year, Hour, Minute;
-    uint8_t  Local_Time_offset_signbit;
-    uint8_t  Local_Time_offset_half_hour;
-  } mtk_ct_t;
-
-  typedef struct {
-    int16_t  AF_Num;
-    int16_t  AF [2][25];
-    uint8_t  Addr_Cnt;
-    uint8_t  isMethod_A;
-    uint8_t  isAFNum_Get;
-  } mtk_af_t;
-
-  typedef struct {
-    uint8_t  PS [4][8];
-    uint8_t  Addr_Cnt;
-  } mtk_ps_t;
-
-  typedef struct {
-    uint8_t  TextData [4][64];
-    uint8_t  GetLength;
-    uint8_t  isRTDisplay;
-    uint8_t  TextLength;
-    uint8_t  isTypeA;
-    uint8_t  BufCnt;
-    uint16_t Addr_Cnt;
-  } mtk_rt_t;
-
-  typedef struct {
-    unsigned long total;
-    unsigned long groupA [16];
-    unsigned long groupB [16];
-  } mtk_group_cnt_t;
-
-  typedef struct {
-    mtk_ct_t        CT;
-    mtk_rds_flag_t  RDSFlag;
-    uint16_t        PI;
-    uint8_t         Switch_TP;
-    uint8_t         PTY;
-    mtk_af_t        AF_Data;
-    mtk_af_t        AFON_Data;
-    uint8_t         Radio_Page_Code;
-    uint16_t        Program_Item_Number_Code;
-    uint8_t         Extend_Country_Code;
-    uint16_t        Language_Code;
-    mtk_ps_t        PS_Data;
-    uint8_t         PS_ON [8];
-    mtk_rt_t        RT_Data;
-    uint16_t        event_status;
-    mtk_group_cnt_t gc;
-  } mtk_rds_t;
-
-  #define RDS_EVENT_PI_CODE         0x0002
-  #define RDS_EVENT_PTY_CODE        0x0004
-  #define RDS_EVENT_PROGRAMNAME     0x0008
-  #define RDS_EVENT_LAST_RADIOTEXT  0x0040
+    // RDS record the driver returns from read (). Offsets were measured on the mt6631 driver (Moto g 2026, 688 byte record);
+    // they differ from MediaTek's published fm.h (32-bit group counters, 4 extra bytes before PS).
+  #define RDS_REC_MIN       0x22c
+  #define RDS_OFF_PI        0x018                                       // uint16
+  #define RDS_OFF_PTY       0x01b                                       // uint8
+  #define RDS_OFF_PS        0x110                                       // PS_Data.PS [3]: 8 chars, latest complete PS
+  #define RDS_OFF_RT        0x122                                       // RT_Data.TextData [0]: 64 chars, live radio text
+  #define RDS_OFF_EVENT     0x22a                                       // uint16 event_status
 
 
     // Internal state:
@@ -149,51 +93,69 @@
     return (curr_freq_inc >= 200 ? FM_SPACE_200K : FM_SPACE_100K);
   }
 
-    // Copy fixed width RDS text, turning NULs and control characters into spaces and trimming trailing spaces.
+    // Copy fixed width RDS text, turning NULs and control characters into spaces and trimming leading and trailing spaces.
   void rds_text_copy (char * dst, int dst_len, uint8_t * src, int src_len) {
-    int idx, last = -1;
-    for (idx = 0; idx < src_len && idx < dst_len - 1; idx ++) {
+    int idx, out = 0, last = -1;
+    for (idx = 0; idx < src_len && out < dst_len - 1; idx ++) {
       char ch = src [idx];
       if (ch < 0x20 || ch == 0x7f)
         ch = ' ';
-      dst [idx] = ch;
+      if (ch == ' ' && out == 0)
+        continue;
+      dst [out] = ch;
       if (ch != ' ')
-        last = idx;
+        last = out;
+      out ++;
     }
     dst [last + 1] = 0;
   }
 
-    // The driver's read () blocks until it has an RDS event, so it runs on its own thread.
+    // RDS reader thread. The driver's read () returns 0 when nothing is new, so poll at 10 Hz.
+    // PS and RT are only published after the same text is read twice in a row, which filters out bit errors.
   void * rds_reader (void * arg) {
-    mtk_rds_t rds;
-    logd ("rds_reader start  sizeof (mtk_rds_t): %d", (int) sizeof (rds));
+    unsigned char rec [1024];
+    char ps [9] = "", rt [65] = "", last_ps [9] = "", last_rt [65] = "";
+    logd ("rds_reader start");
     while (rds_thread_running && dev_hndl >= 0) {
-      memset (& rds, 0, sizeof (rds));
-      int len = read (dev_hndl, & rds, sizeof (rds));
+      int len = read (dev_hndl, rec, sizeof (rec));
       if (! rds_thread_running)
         break;
-      if (len != sizeof (rds)) {
-        if (len < 0 && errno != EINTR && errno != EAGAIN) {
-          loge ("rds_reader read: %d  errno: %d (%s)", len, errno, strerror (errno));
-          ms_sleep (200);
-        }
+      if (len == 0 || (len < 0 && (errno == EINTR || errno == EAGAIN))) {
+        quiet_ms_sleep (100);
         continue;
       }
-      uint16_t evt = rds.event_status;
-      if (! (evt & (RDS_EVENT_PI_CODE | RDS_EVENT_PTY_CODE | RDS_EVENT_PROGRAMNAME | RDS_EVENT_LAST_RADIOTEXT)))
+      if (len < RDS_REC_MIN) {
+        loge ("rds_reader read len: %d  errno: %d", len, errno);
+        quiet_ms_sleep (500);
         continue;
+      }
+      uint16_t evt = rec [RDS_OFF_EVENT] | (rec [RDS_OFF_EVENT + 1] << 8);
+      uint16_t pi  = rec [RDS_OFF_PI]    | (rec [RDS_OFF_PI + 1] << 8);
+      rds_text_copy (ps, sizeof (ps), & rec [RDS_OFF_PS], 8);
+      rds_text_copy (rt, sizeof (rt), & rec [RDS_OFF_RT], 64);
 
       pthread_mutex_lock (& rds_lock);
-      if (evt & RDS_EVENT_PI_CODE)
-        rds_pending.srds_pi = rds.PI;
-      if (evt & RDS_EVENT_PTY_CODE)
-        rds_pending.srds_pt = rds.PTY;
-      if (evt & RDS_EVENT_PROGRAMNAME)
-        rds_text_copy (rds_pending.srds_ps, sizeof (rds_pending.srds_ps), rds.PS_Data.PS [3], 8);
-      if (evt & RDS_EVENT_LAST_RADIOTEXT)
-        rds_text_copy (rds_pending.srds_rt, sizeof (rds_pending.srds_rt), rds.RT_Data.TextData [3], 64);
-      rds_dirty = 1;
+      if (pi && pi != rds_pending.srds_pi) {
+        rds_pending.srds_pi = pi;
+        rds_pending.srds_pt = rec [RDS_OFF_PTY];
+        rds_dirty = 1;
+      }
+      if (ps [0] && ! strcmp (ps, last_ps) && strcmp (ps, rds_pending.srds_ps)) {
+        strlcpy (rds_pending.srds_ps, ps, sizeof (rds_pending.srds_ps));
+        rds_dirty = 1;
+      }
+      if (rt [0] && ! strcmp (rt, last_rt) && strcmp (rt, rds_pending.srds_rt)) {
+        strlcpy (rds_pending.srds_rt, rt, sizeof (rds_pending.srds_rt));
+        rds_dirty = 1;
+      }
       pthread_mutex_unlock (& rds_lock);
+      static int rec_logs = 0;
+      if (rec_logs ++ < 5 || ena_log_tnr_extra)
+        logd ("rds_reader len: %d  evt: 0x%x  PI: 0x%x  PS: \"%s\"  RT: \"%s\"", len, evt, pi, ps, rt);
+
+      strlcpy (last_ps, ps, sizeof (last_ps));
+      strlcpy (last_rt, rt, sizeof (last_rt));
+      quiet_ms_sleep (100);
     }
     logd ("rds_reader done");
     return (NULL);

@@ -173,7 +173,7 @@ public class com_api {
 
     try {
       intent.setPackage (m_context.getPackageName ());
-      m_context.sendStickyBroadcast (intent);                           // Send Sticky Broadcast w/ all info
+      m_context.sendBroadcast (intent);                                 // Not sticky: Android 14+ strips the sender uid from sticky broadcasts, so NOT_EXPORTED receivers reject them
     }
     catch (Throwable e) {
       e.printStackTrace ();

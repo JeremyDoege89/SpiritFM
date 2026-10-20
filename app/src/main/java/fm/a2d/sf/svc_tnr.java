@@ -566,12 +566,14 @@ public class svc_tnr implements svc_tap {
       if (! last_poll_rds_ps.equals (m_com_api.tuner_rds_ps)) {
         need_bulk_displays_update = true;//m_svc_tcb.cb_tuner_key ("tuner_rds_ps", last_poll_rds_ps = m_com_api.tuner_rds_ps); // Inform change
         last_poll_rds_ps = m_com_api.tuner_rds_ps;
+        com_uti.logd ("tuner_rds_ps: " + m_com_api.tuner_rds_ps);
       }
 
         // RDS rt:
       if (! last_poll_rds_rt.equals (m_com_api.tuner_rds_rt)) {
         need_bulk_displays_update = true;//m_svc_tcb.cb_tuner_key ("tuner_rds_rt", last_poll_rds_rt = m_com_api.tuner_rds_rt); // Inform change
         last_poll_rds_rt = m_com_api.tuner_rds_rt;
+        com_uti.logd ("tuner_rds_rt: " + m_com_api.tuner_rds_rt);
       }
 
         // RDS pi:
